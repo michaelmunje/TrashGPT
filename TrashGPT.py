@@ -78,3 +78,13 @@ class TrashGPT:
         except:
             trash = []
         return trash
+    
+    def overlay_results(self, image, trash_items: [Trash]):
+        """
+        Overlays red dots on the image at the given locations.
+        """
+        image = image.copy()
+        for item in trash_items:
+            location = item.location
+            image[location[0] - 3:location[0] + 3, location[1] - 3:location[1] + 3] = [0, 0, 255]
+        return image

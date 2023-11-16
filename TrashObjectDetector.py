@@ -17,15 +17,12 @@ import os
 class TrashObjectDetector:
     def __init__(self):
         self.trash_labels = [
-            'bottle', 'can', 'cup', 'bag', 'straw', 'food wrapper', 'takeout containers', 
-            'packaging material', 'paper', 'cardboard', 'battery', 'cell phone', 
-            'small electronics', 'light bulb', 'circuit boards', 'syringe', 
-            'medication container', 'chemical container', 'paint can', 'pesticide container', 
-            'cigarette butt', 'mask', 'gloves', 'toys', 'clothes', 'shoes', 'tire', 
-            'broken glass', 'balloon', 'food scrap', 'fruit peel', 'vegetable peel', 
-            'yard waste', 'glass bottle', 'metal can', 'plastic container', 'paperboard', 'newspaper'
-            ]
-        
+            'bottle', 'can', 'cup', 'bag', 'straw', 'wrapper', 'container', 
+            'material', 'paper', 'cardboard', 'battery', 'phone', 'electronics', 
+            'bulb', 'boards', 'syringe', 'medication', 'chemical', 'paint', 'pesticide', 
+            'cigarette', 'mask', 'gloves', 'toys', 'clothes', 'shoes', 'tire', 
+            'glass', 'balloon', 'scrap', 'peel', 'waste', 'newspaper', 'magazine']
+
         self.STANDARD_COLORS = [
             'AliceBlue', 'Chartreuse', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque',
             'BlanchedAlmond', 'BlueViolet', 'BurlyWood', 'CadetBlue', 'AntiqueWhite',
@@ -232,7 +229,10 @@ class TrashObjectDetector:
             np.copyto(image, np.array(image_pil))
 
         return image
-        
+    
+    # Let's perform some estimation for the pixel coordinates of the trash objects
+
+
     # Perform object detection
     def detect(self, image, only_trash=False):
         image = np.asarray(image)
@@ -250,11 +250,10 @@ class TrashObjectDetector:
         return output_dict
     
     # Filter for trash items (modify this list based on your requirements)
-    def filter_for_trash_items(self, output_dict, threshold=0.5):
+    def filter_for_trash_items(self, output_dict):
         classes = output_dict['detection_classes']
-        scores = output_dict['detection_scores']
         trash_indices = [i for i, label in enumerate(classes) if self.label_map[label] \
-            in self.trash_labels and scores[i] > threshold]
+            in self.trash_labels]
         output_dict_old = output_dict
         output_dict = {'detection_boxes': output_dict_old['detection_boxes'][trash_indices],
                         'detection_classes': output_dict_old['detection_classes'][trash_indices],
