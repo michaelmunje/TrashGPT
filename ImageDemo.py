@@ -1,5 +1,4 @@
 import cv2
-import time
 import numpy as np
 import TrashObjectDetector
 import TrashGPT
@@ -10,7 +9,6 @@ import sys
 
 def image_demo(filename, save_images=True):
     image = cv2.imread(image_filepath)
-    
     
     trash_detector_gpt = TrashGPT.TrashGPT()
     trash_detector_od = TrashObjectDetector.TrashObjectDetector()
@@ -72,7 +70,7 @@ def image_demo(filename, save_images=True):
                                         lineType = cv2.LINE_AA)
         gpt_image = trash_detector_gpt.overlay_results(image, trash)
         # Add images together
-        image = np.concatenate((gpt_image, caption_img), axis=0)
+        gpt_image = np.concatenate((gpt_image, caption_img), axis=0)
 
         # same thing but above
         prompt_img = np.ones((250, width, 3), np.uint8) * 255
@@ -103,11 +101,11 @@ def image_demo(filename, save_images=True):
                                         thickness = 1, 
                                         lineType = cv2.LINE_AA)
 
-        image = np.concatenate((prompt_img, image), axis=0)
+        gpt_image = np.concatenate((prompt_img, gpt_image), axis=0)
 
         # save img
         new_filename = filename.split('.')[0] + '_GPT.jpg'
-        cv2.imwrite(new_filename, image)
+        cv2.imwrite(new_filename, gpt_image)
         print('Saved image to', new_filename)
     
     # finally, let's do the matching

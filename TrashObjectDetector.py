@@ -167,7 +167,6 @@ class TrashObjectDetector:
         image,
         output_dict,
         max_boxes_to_draw=20,
-        min_score_thresh=.5,
         line_thickness=4,
         groundtruth_box_visualization_color='black'):
         """Overlay labeled boxes on an image with formatted scores and label names.
@@ -202,12 +201,14 @@ class TrashObjectDetector:
         box_to_color_map = collections.defaultdict(str)
         max_boxes_to_draw = boxes.shape[0]
         for i in range(boxes.shape[0]):
+            if scores[i] > 0.2:
+                box = tuple(boxes[i].tolist())
+                box_to_color_map[box] = groundtruth_box_visualization_color
             if max_boxes_to_draw == len(box_to_color_map):
                 break
-            if scores is None or scores[i] > min_score_thresh:
-                box = tuple(boxes[i].tolist())
-            if scores is None:
-                box_to_color_map[box] = groundtruth_box_visualization_color
+            # if scores is None or scores[i] > min_score_thresh:
+            #     box = tuple(boxes[i].tolist())
+            # if scores is None:
             else:
                 display_str = ''
                 class_name = self.label_map[classes[i]]
