@@ -22,8 +22,13 @@ class TrashGPT:
 
         self.trash_prompt = "Is there any trash in this image?" + \
             " Provide the response as a brief list separated by semi-colons" + \
-            " and nothing else, where the list contains 'Object Name: Relative Coordinates (Y, X)'." + \
-            "\nExample: 'Soda can: 0.5, 0.5; Bottle: 0.2, 0.8'."
+            " and nothing else, where the list contains 'Object Name: Relative Center Coordinates (Y, X)'." + \
+            "\nExample: 'Soda can: 0.35, 0.58; Bottle: 0.34, 0.82'."
+            
+        self.trash_can_prompt = "Is there a trash can in this image?" + \
+            " Provide the response as a brief list separated by semi-colons" + \
+            " and nothing else, where the list contains 'Object Name: Relative Center Coordinates (Y, X)'." + \
+            "\nExample: 'Trash can: 0.35, 0.58; Trash can: 0.34, 0.82."
 
         api_key = os.environ.get('OPENAI_API_KEY')
         self.headers = {
@@ -60,8 +65,10 @@ class TrashGPT:
             "max_tokens": 300
         }
 
-    def perform_trash_detection(self, image, image_height, image_width) -> [Trash]:
-        payload = self.get_payload(image)
+    def perform_detection(self, image, image_height, image_width, prompt=None) -> [Trash]:
+        if prompt is None:
+            prompt = self.trash_prompt
+        payload = self.get_payload(image, prompt=prompt)
         response = requests.post(self.api_url, headers=self.headers, json=payload)
         output = response.json()
         gpt_output =  output['choices'][0]['message']['content']
@@ -78,6 +85,12 @@ class TrashGPT:
         except:
             trash = []
         return trash
+    
+    def perform_trash_detection(self, image, image_height, image_width) -> [Trash]:
+        return self.perform_detection(image, image_height, image_width, prompt=self.trash_prompt)
+    
+    def perform_trash_can_detection(self, image, image_height, image_width) -> [Trash]:
+        return self.perform_detection(image, image_height, image_width, prompt=self.trash_can_prompt)
     
     def overlay_results(self, image, trash_items: [Trash]):
         """

@@ -32,3 +32,23 @@ class GetTrash:
         
         location_results = [p.location for p in match_results]
         return location_results
+    
+    def get_trash_can(self, image):
+        result = self.trash_detector_od.detect(image)
+        trash_result = self.trash_detector_od.filter_for_trash_items(result)
+
+        # save file
+        timestamp = int(time.time())
+        filename = f'image_{timestamp}.jpg'
+        cv2.imwrite(filename, image)
+        # Function to encode the image
+        with open(filename, "rb") as image_file:
+            gpt_img_input = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        trash = self.trash_detector_gpt.perform_trash_can_detection(gpt_img_input, image.shape[0], image.shape[1])
+        
+        # finally, let's do the matching
+        match_results = self.trash_match.match_results(trash, trash_result, image.shape[0], image.shape[1])
+        
+        location_results = [p.location for p in match_results]
+        return location_results
