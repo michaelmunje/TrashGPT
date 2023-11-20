@@ -20,7 +20,7 @@ class TrashObjectDetector:
             'bottle', 'can', 'cup', 'bag', 'straw', 'wrapper', 'container', 
             'material', 'paper', 'cardboard', 'battery', 'phone', 'electronics', 
             'bulb', 'boards', 'syringe', 'medication', 'chemical', 'paint', 'pesticide', 
-            'cigarette', 'mask', 'gloves', 'toys', 'clothes', 'shoes', 'tire', 
+            'cigarette', 'mask', 'gloves', 'toys', 'clothes', 'shoes', 'tire',
             'glass', 'balloon', 'scrap', 'peel', 'waste', 'newspaper', 'magazine']
 
         self.STANDARD_COLORS = [

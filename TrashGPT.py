@@ -21,14 +21,14 @@ class TrashGPT:
         self.client = OpenAI()
 
         self.trash_prompt = "Is there any trash in this image?" + \
-            " Provide the response as a brief list separated by semi-colons" + \
-            " and nothing else, where the list contains 'Object Name: Relative Center Coordinates (Y, X)'." + \
-            "\nExample: 'Soda can: 0.35, 0.58; Bottle: 0.34, 0.82'."
-            
+            " Provide the response as one trash item " + \
+            " and nothing else, formatted as 'Object Name: Relative Center Coordinates (Y, X)'." + \
+            "\nExample: 'Soda can: 0.35, 0.58'."
+
         self.trash_can_prompt = "Is there a trash can in this image?" + \
-            " Provide the response as a brief list separated by semi-colons" + \
-            " and nothing else, where the list contains 'Object Name: Relative Center Coordinates (Y, X)'." + \
-            "\nExample: 'Trash can: 0.35, 0.58; Trash can: 0.34, 0.82."
+            " Provide the response as one trash item " + \
+            " and nothing else, formatted as 'Object Name: Relative Center Coordinates (Y, X)'." + \
+            "\nExample: 'Soda can: 0.35, 0.58'."
 
         api_key = os.environ.get('OPENAI_API_KEY')
         self.headers = {
@@ -65,39 +65,52 @@ class TrashGPT:
             "max_tokens": 300
         }
 
-    def perform_detection(self, image, image_height, image_width, prompt=None) -> [Trash]:
-        if prompt is None:
-            prompt = self.trash_prompt
-        payload = self.get_payload(image, prompt=prompt)
-        response = requests.post(self.api_url, headers=self.headers, json=payload)
-        output = response.json()
-        gpt_output =  output['choices'][0]['message']['content']
-        pieces_of_trash = gpt_output.split(';')
-        try:
-            trash = []
-            for item in pieces_of_trash:
-                contents = item.split(':')
+    def perform_detection(self, image, image_height, image_width, n_runs=1, prompt=None) -> [Trash]:
+        runs = []
+        for _ in range(n_runs):
+            if prompt is None:
+                prompt = self.trash_prompt
+            payload = self.get_payload(image, prompt=prompt)
+            response = requests.post(self.api_url, headers=self.headers, json=payload)
+            output = response.json()
+            gpt_output =  output['choices'][0]['message']['content']
+            try:
+                trash = None
+                contents = gpt_output.split(':')
                 trash_name = contents[0]
                 trash_locations = contents[-1].split(',')
                 trash_y = int(float(trash_locations[0]) * image_height)
                 trash_x = int(float(trash_locations[1]) * image_width)
-                trash.append(Trash(trash_name, [trash_y, trash_x]))
-        except:
-            trash = []
-        return trash
+                trash = Trash(trash_name, [trash_y, trash_x])
+            except:
+                trash = None
+            runs.append(trash)
+
+        self.raw_runs = runs
+        # let's get avg of runs
+        n_successful_runs = 0
+        total_y, total_x = 0, 0
+        trash_name = 'None'
+        for i in range(n_runs):
+            if runs[i] is not None:
+                total_y += runs[i].location[0]
+                total_x += runs[i].location[1]
+                n_successful_runs += 1
+                trash_name = runs[i].name
+        
+        return Trash(trash_name, [total_y // n_successful_runs, total_x // n_successful_runs])
     
-    def perform_trash_detection(self, image, image_height, image_width) -> [Trash]:
-        return self.perform_detection(image, image_height, image_width, prompt=self.trash_prompt)
+    def perform_trash_detection(self, image, image_height, image_width, n_runs=1) -> [Trash]:
+        return self.perform_detection(image, image_height, image_width, n_runs=n_runs, prompt=self.trash_prompt)
     
-    def perform_trash_can_detection(self, image, image_height, image_width) -> [Trash]:
-        return self.perform_detection(image, image_height, image_width, prompt=self.trash_can_prompt)
+    def perform_trash_can_detection(self, image, image_height, image_width, n_runs=1) -> [Trash]:
+        return self.perform_detection(image, image_height, image_width, n_runs=n_runs, prompt=self.trash_can_prompt)
     
-    def overlay_results(self, image, trash_items: [Trash]):
+    def overlay_results(self, image, trash: Trash):
         """
         Overlays red dots on the image at the given locations.
         """
         image = image.copy()
-        for item in trash_items:
-            location = item.location
-            image[location[0] - 3:location[0] + 3, location[1] - 3:location[1] + 3] = [0, 0, 255]
+        location = trash.location
+        image[location[0] - 3:location[0] + 3, location[1] - 3:location[1] + 3] = [0, 0, 255]
         return image
